@@ -26,13 +26,15 @@ struct ProjectDetailView: View {
             Group {
                 switch tab {
                 case .board: BoardView(project: $project)
-                case .materials: MaterialsView(project: $project)
+                case .materials: MaterialsView(project: $project).solidWhenGlass()
                 case .photos: PhotosView(project: $project)
-                case .notes: NotesView(project: $project)
+                case .notes: NotesView(project: $project).solidWhenGlass()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // Board and photos float on the tinted backdrop (header included, so there's no seam); tables and notes stay solid.
+        .glassBackdrop(enabled: tab == .board || tab == .photos)
         .navigationTitle(project.name)
         .toolbar {
             ToolbarItem(placement: .principal) {

@@ -132,3 +132,65 @@ enum Snapshot {
         }
     }
 }
+
+#if DEBUG
+/// `HobbyAtlas --glass-snapshot <dir>` captures the main screens with the Liquid Glass theme off and on, light and dark,
+/// using a real on-screen window capture (cacheDisplay can't render glass). Throwaway library; restores the setting.
+extension Snapshot {
+    static var glassOutputDir: String? {
+        guard let i = CommandLine.arguments.firstIndex(of: "--glass-snapshot"), i + 1 < CommandLine.arguments.count else { return nil }
+        return CommandLine.arguments[i + 1]
+    }
+
+    static func runGlass(to dir: String) {
+        try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        NSApp.windows.forEach { $0.orderOut(nil) }
+        let defaults = UserDefaults.standard
+        let saved = defaults.object(forKey: GlassTheme.key)
+        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("HobbyAtlasGlass-\(UUID().uuidString)")
+        let store = AppStore(baseURL: tmp)
+        let projectID = seed(store)
+        let binding = store.binding(for: projectID)!
+        func wait(_ s: Double) { RunLoop.main.run(until: Date().addingTimeInterval(s)) }
+
+        let shots: [(String, () -> AnyView, CGSize)] = [
+            ("dashboard", { AnyView(ContentView()) }, CGSize(width: 1280, height: 800)),
+            ("board", { AnyView(ContentView(initialPath: [projectID])) }, CGSize(width: 1280, height: 800)),
+            ("materials", { AnyView(NavigationStack { ProjectDetailView(project: binding, tab: .materials) }) }, CGSize(width: 1280, height: 640)),
+            ("photos", { AnyView(NavigationStack { ProjectDetailView(project: binding, tab: .photos) }) }, CGSize(width: 1280, height: 720)),
+            ("settings", { AnyView(SettingsView()) }, CGSize(width: 460, height: 420)),
+        ]
+        for dark in [false, true] {
+            NSApp.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            for glass in [false, true] {
+                defaults.set(glass, forKey: GlassTheme.key)
+                let tag = "\(glass ? "glass" : "plain")-\(dark ? "dark" : "light")"
+                for (name, make, size) in shots {
+                    let w = NSWindow(contentRect: NSRect(origin: .zero, size: size),
+                                     styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+                    w.isReleasedWhenClosed = false
+                    w.contentView = NSHostingView(rootView: make().environmentObject(store).frame(width: size.width, height: size.height))
+                    w.center()
+                    w.makeKeyAndOrderFront(nil)
+                    wait(1.5)
+                    glassCapture(w, "\(dir)/\(name)-\(tag).png")
+                    w.orderOut(nil)
+                }
+            }
+        }
+        if let saved { defaults.set(saved, forKey: GlassTheme.key) } else { defaults.removeObject(forKey: GlassTheme.key) }
+        try? FileManager.default.removeItem(at: tmp)
+        exit(0)
+    }
+
+    private typealias CapFn = @convention(c) (CGRect, UInt32, UInt32, UInt32) -> Unmanaged<CGImage>?
+
+    private static func glassCapture(_ window: NSWindow, _ path: String) {
+        guard let sym = dlsym(dlopen(nil, RTLD_NOW), "CGWindowListCreateImage") else { return }
+        let f = unsafeBitCast(sym, to: CapFn.self)
+        guard let img = f(.null, 8, UInt32(window.windowNumber), 1 | 8)?.takeRetainedValue(),
+              let png = NSBitmapImageRep(cgImage: img).representation(using: .png, properties: [:]) else { return }
+        try? png.write(to: URL(fileURLWithPath: path))
+    }
+}
+#endif

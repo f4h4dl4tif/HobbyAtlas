@@ -29,6 +29,12 @@ struct HobbyAtlasApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        if let dir = Snapshot.glassOutputDir {
+            Task { @MainActor in Snapshot.runGlass(to: dir) }
+            return
+        }
+        #endif
         if let dir = ProcessInfo.processInfo.environment["HOBBYATLAS_SNAPSHOT"] {
             Task { @MainActor in Snapshot.run(to: dir) }
         }
@@ -43,6 +49,7 @@ extension Notification.Name {
 
 struct SettingsView: View {
     @EnvironmentObject var store: AppStore
+    @AppStorage(GlassTheme.key) private var glassTheme = false
 
     var body: some View {
         TabView {
@@ -51,6 +58,15 @@ struct SettingsView: View {
                     Picker("Currency", selection: $store.library.currency) {
                         ForEach(["USD", "EUR", "GBP", "CAD", "AUD", "SAR", "AED", "INR", "PKR", "JPY"], id: \.self) { Text($0) }
                     }
+                }
+                Section {
+                    Toggle("Liquid Glass theme", isOn: $glassTheme).disabled(!GlassTheme.isSupported)
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text(GlassTheme.isSupported ? "Liquid Glass cards, board columns and badges over a soft tinted backdrop."
+                                                : "Requires macOS 26 or later.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Storage") {
                     LabeledContent("Projects", value: "\(store.projects.count)")
@@ -71,6 +87,6 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 460, height: 320)
+        .frame(width: 460, height: 420)
     }
 }

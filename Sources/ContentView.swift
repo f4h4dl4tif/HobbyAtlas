@@ -130,6 +130,7 @@ struct ProjectGridView: View {
                     }
                     .padding(20)
                 }
+                .glassBackdrop()
             }
         }
         .navigationTitle(filter.title)
@@ -165,7 +166,7 @@ struct ProjectGridView: View {
             } description: {
                 Text("Plan it on a board, track materials and costs, and document progress with photos.")
             } actions: {
-                Button("New Project", action: onNew).buttonStyle(.borderedProminent)
+                Button("New Project", action: onNew).modifier(ProminentButton())
             }
         }
     }
@@ -198,7 +199,7 @@ struct StatsStrip: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
+        .glassOr(RoundedRectangle(cornerRadius: 12), fill: .background.secondary)
     }
 }
 
@@ -226,7 +227,7 @@ struct ProjectCardView: View {
                 }
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(.ultraThinMaterial, in: Capsule())
+                .glassOr(Capsule(), fill: .ultraThinMaterial)
                 .padding(10)
             }
             .frame(height: 140)
@@ -255,10 +256,7 @@ struct ProjectCardView: View {
             }
             .padding(12)
         }
-        .background(.background.secondary)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.separator.opacity(hovering ? 1 : 0.5)))
-        .shadow(color: .black.opacity(hovering ? 0.15 : 0.05), radius: hovering ? 10 : 4, y: 2)
+        .modifier(ProjectCardSurface(hovering: hovering))
         .scaleEffect(hovering ? 1.01 : 1)
         .animation(.easeOut(duration: 0.15), value: hovering)
         .onHover { hovering = $0 }
@@ -367,5 +365,26 @@ struct NewProjectSheet: View {
         let id = store.addProject(p)
         dismiss()
         onCreate(id)
+    }
+}
+
+/// Project card chrome: the original solid card, or a Liquid Glass card (cover image clipped inside it).
+struct ProjectCardSurface: ViewModifier {
+    @AppStorage(GlassTheme.key) private var stored = false
+    private var glass: Bool { stored && GlassTheme.isSupported }
+    let hovering: Bool
+
+    func body(content: Content) -> some View {
+        if glass, #available(macOS 26, *) {
+            content
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14))
+        } else {
+            content
+                .background(.background.secondary)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.separator.opacity(hovering ? 1 : 0.5)))
+                .shadow(color: .black.opacity(hovering ? 0.15 : 0.05), radius: hovering ? 10 : 4, y: 2)
+        }
     }
 }

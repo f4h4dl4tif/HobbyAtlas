@@ -261,6 +261,6 @@ struct CompareView: View {
     private func badge(_ text: String) -> some View {
         Text(text).font(.caption.weight(.semibold))
             .padding(.horizontal, 8).padding(.vertical, 4)
-            .background(.ultraThinMaterial, in: Capsule())
+            .glassOr(Capsule(), fill: .ultraThinMaterial)
     }
 }

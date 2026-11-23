@@ -1,0 +1,82 @@
+How to install HobbyAtlas
+=========================
+
+Requires macOS 14 Sonoma or later on a Mac with Apple Silicon (M1 or newer).
+It does not run on Intel Macs.
+
+HobbyAtlas isn't notarized by Apple, so on a new Mac macOS blocks it the
+first time. Pick ONE of the two ways below, and use the Terminal fixes if it
+fails.
+
+
+OPTION A: Installer package (HobbyAtlas-x.x.pkg)
+------------------------------------------------
+1. Double-click HobbyAtlas-x.x.pkg.
+2. If macOS says it "can't be opened" or "could not verify" it: click Done,
+   open System Settings > Privacy & Security, scroll to Security and click
+   "Open Anyway" next to HobbyAtlas-x.x.pkg. Enter your password.
+3. Follow the installer. HobbyAtlas is installed in Applications and opens
+   itself.
+
+
+OPTION B: Disk image (HobbyAtlas-x.x.dmg)
+-----------------------------------------
+1. Open the .dmg and drag HobbyAtlas onto the Applications folder.
+2. Open HobbyAtlas from Applications. If macOS blocks it, click Done (don't
+   move it to the Bin), then System Settings > Privacy & Security >
+   "Open Anyway".
+
+
+IF IT STILL FAILS: Terminal commands
+------------------------------------
+Open Terminal (Applications > Utilities > Terminal), paste a command, press
+Return and type your Mac password when asked (nothing shows as you type).
+
+1. The installer package won't open. Install it from Terminal instead
+   (change the path if the file isn't in Downloads):
+
+       sudo installer -pkg ~/Downloads/HobbyAtlas-*.pkg -target /
+
+2. HobbyAtlas is installed but won't open, or macOS says it is "damaged":
+
+       sudo xattr -cr /Applications/HobbyAtlas.app && open /Applications/HobbyAtlas.app
+
+3. "Open Anyway" doesn't appear, or the .pkg / .dmg itself is blocked:
+
+       xattr -c ~/Downloads/HobbyAtlas-*
+
+   then double-click the file again.
+
+4. HobbyAtlas doesn't ask for any special permissions, so this is rarely
+   needed. If you clicked "Don't Allow" when macOS asked whether HobbyAtlas
+   may open a folder (for example Desktop or Downloads while importing
+   photos), reset its answers:
+
+       tccutil reset All local.hobbyatlas.app
+
+   then quit and reopen HobbyAtlas and click Allow next time.
+
+5. Check the Mac is new enough (the first must say 14 or higher, the second
+   must say arm64):
+
+       sw_vers -productVersion
+       uname -m
+
+
+AFTER INSTALLING
+----------------
+HobbyAtlas opens on your project library. Click New Project to start from a
+hobby template (gardening, model building, electronics and more) or a blank
+board. Each project has a board, a materials list with a budget, a photo
+timeline (drag photos in) and notes. Settings lets you change the currency
+and, on macOS 26, turn on the Liquid Glass theme.
+
+Your projects are saved in ~/Library/Application Support/HobbyAtlas
+(library.json plus a Photos folder). Settings > General >
+"Show Data Folder in Finder" opens it. Copy that folder to the same place
+on another Mac to move your projects.
+
+To uninstall (this also deletes your projects and photos, so copy that folder
+first): quit HobbyAtlas, then run
+
+       rm -rf /Applications/HobbyAtlas.app ~/Library/Application\ Support/HobbyAtlas ~/Library/Preferences/local.hobbyatlas.app.plist

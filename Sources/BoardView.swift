@@ -30,7 +30,7 @@ struct BoardView: View {
                 } label: {
                     Label("Add Column", systemImage: "plus")
                         .frame(width: 200, height: 44)
-                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+                        .glassOr(RoundedRectangle(cornerRadius: 10), fill: .quaternary.opacity(0.5))
                 }
                 .buttonStyle(.plain)
             }
@@ -144,8 +144,8 @@ struct ColumnView: View {
         .padding(12)
         .frame(width: 270)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(isDropTarget ? accent.opacity(0.15) : Color.secondary.opacity(0.08),
-                    in: RoundedRectangle(cornerRadius: 12))
+        .glassOr(RoundedRectangle(cornerRadius: 12), fill: isDropTarget ? accent.opacity(0.15) : Color.secondary.opacity(0.08),
+                 tint: isDropTarget ? accent.opacity(0.25) : nil)
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(isDropTarget ? accent : .clear, lineWidth: 2))
         .confirmationDialog("Delete “\(column.title)” and its \(column.cards.count) cards?", isPresented: $confirmDelete) {
             Button("Delete Column", role: .destructive, action: onDelete)
